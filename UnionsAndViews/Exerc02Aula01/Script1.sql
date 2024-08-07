@@ -115,35 +115,62 @@ GO
 
 CREATE VIEW vw_alunos
 AS
-    SELECT ra, nome AS aluno
-    FROM aluno;
+    SELECT
+        ra, nome AS aluno
+    FROM
+        aluno;
 GO
 
 CREATE VIEW vw_disciplinas
 AS
-    SELECT codigo AS CodigoDisciplina, nome AS disciplina
-    FROM disciplina;
+    SELECT
+        codigo AS CodigoDisciplina,
+        nome AS disciplina
+    FROM
+        disciplina;
 GO
 
 CREATE VIEW vw_aluno_disciplina
 AS
-    SELECT alunoRa, disciplinaCodigo
-    FROM aluno_disciplina;
+    SELECT
+        alunoRa,
+        disciplinaCodigo
+    FROM
+        aluno_disciplina;
 GO
 
 CREATE VIEW vw_professores
 AS
-    SELECT p.registro, p.nome AS Nome, t.titulo
-    FROM professor p
+    SELECT
+        p.registro AS nomeProfessor,
+        p.nome AS Titulacao
+    FROM
+        professor p
         JOIN titulacao t ON p.titulacao = t.codigo
 GO
 
 CREATE VIEW vw_disciplina_curso
 AS
-    SELECT d.nome AS nomeDisciplina, c.area AS areaCurso, c.nome AS nomeCurso
-    FROM disciplina d
+    SELECT
+        d.nome AS nomeDisciplina,
+        c.area AS areaCurso,
+        c.nome AS nomeCurso
+    FROM
+        disciplina d
         JOIN curso_disciplina cd ON d.codigo = cd.disciplinaCodigo
         JOIN curso c ON cd.cursoCodigo = c.codigo;
+GO
+
+CREATE VIEW vw_disciplina_professor_titulo
+AS
+    SELECT
+        d.disciplina AS Disciplina,
+        t.titulo AS Titulo_Professor
+    FROM
+        disciplina_professor dp
+        JOIN vw_disciplinas d ON dp.disciplinaCodigo = d.CodigoDisciplina
+        JOIN vw_professores p ON dp.professorRegistro = p.Titulacao
+        JOIN titulacao t ON p.Titulacao = t.codigo
 GO
 
 -- Consultas
@@ -153,7 +180,8 @@ GO
 */
 
 SELECT d.disciplina, a.ra, a.aluno
-FROM vw_aluno_disciplina ad
+FROM
+    vw_aluno_disciplina ad
     JOIN vw_alunos a ON ad.alunoRa = a.ra
     JOIN vw_disciplinas d ON ad.disciplinaCodigo = d.CodigoDisciplina
 ORDER BY d.disciplina, a.aluno;
@@ -175,14 +203,83 @@ ORDER BY d.disciplina
     3) Fazer uma pesquisa que , dado o nome de uma disciplina, retorne o nome do curso
 */
 
-SELECT nomeCurso
-FROM vw_disciplina_curso
+SELECT
+    nomeCurso
+FROM
+    vw_disciplina_curso
 WHERE nomeDisciplina LIKE 'Gestão%'
 
 /*
     4) Fazer uma pesquisa que , dado o nome de uma disciplina, retorne sua área
 */
 
-SELECT areaCurso
-FROM vw_disciplina_curso
+SELECT
+    areaCurso
+FROM
+    vw_disciplina_curso
 WHERE nomeDisciplina LIKE 'Teste%'
+
+/*
+    5) Fazer uma pesquisa que, dado o nome de uma disciplina, retorne o título do professor que a ministra
+*/
+
+SELECT
+    t.titulo AS Titulação
+FROM
+    professor p
+    JOIN disciplina_professor dp ON dp.professorRegistro = p.registro
+    JOIN disciplina d ON d.codigo = dp.disciplinaCodigo
+    JOIN titulacao t ON t.codigo = p.titulacao
+WHERE d.nome LIKE 'Redes%'
+
+/*
+    6) Fazer uma pesquisa que retorne o nome da disciplina e quantos alunos estão matriculados em cada uma delas
+*/
+
+SELECT
+    d.nome AS nomeDisciplina,
+    COUNT(ad.alunoRa) AS quantidadeAlunos
+FROM
+    disciplina d
+    LEFT JOIN aluno_disciplina ad ON d.codigo = ad.disciplinaCodigo
+GROUP BY d.nome
+ORDER BY nomeDisciplina
+
+/*
+    7) Fazer uma pesquisa que, dado o nome de uma disciplina, retorne o nome do professor.  Só deve retornar de disciplinas que tenham, no mínimo, 5 alunos matriculados
+*/
+
+WITH
+    disciplinaComAlunos
+    AS
+    (
+        SELECT ad.disciplinaCodigo,
+            COUNT(ad.alunoRa) AS quantidadeAlunos
+        FROM aluno_disciplina ad
+        GROUP BY ad.disciplinaCodigo
+        HAVING COUNT(ad.alunoRa) >= 5
+    )
+
+SELECT
+    d.nome AS NomeDisciplina,
+    p.nome AS NomeProfessor
+FROM
+    disciplinaComAlunos dca
+    JOIN disciplina d ON dca.disciplinaCodigo = d.codigo
+    JOIN disciplina_professor dp ON d.codigo = dp.disciplinaCodigo
+    JOIN professor p ON dp.professorRegistro = p.registro
+ORDER BY d.nome, p.nome
+
+/*
+    8) Fazer uma pesquisa que retorne o nome do curso e a quatidade de professores cadastrados que ministram aula nele. A coluna de ve se chamar quantidade
+*/
+
+SELECT
+    c.nome AS NomeCurso,
+    count(DISTINCT dp.professorRegistro) AS Quantidade
+FROM
+    curso c
+    JOIN curso_disciplina cd ON c.codigo = cd.cursoCodigo
+    JOIN disciplina_professor dp ON dp.disciplinaCodigo = cd.disciplinaCodigo
+GROUP BY c.nome
+ORDER BY c.nome
