@@ -142,8 +142,8 @@ GO
 CREATE VIEW vw_professores
 AS
     SELECT
-        p.registro AS nomeProfessor,
-        p.nome AS Titulacao
+        p.registro AS Titulacao,
+        p.nome AS NomeProfessor
     FROM
         professor p
         JOIN titulacao t ON p.titulacao = t.codigo
@@ -192,11 +192,11 @@ ORDER BY d.disciplina, a.aluno;
 
 SELECT
     d.disciplina AS Disciplina,
-    p.Nome AS Professor
+    p.nomeProfessor AS Professor
 FROM
     disciplina_professor dp
     JOIN vw_disciplinas d ON dp.disciplinaCodigo = d.CodigoDisciplina
-    JOIN vw_professores p ON dp.professorRegistro = p.registro
+    JOIN vw_professores p ON dp.professorRegistro = p.Titulacao
 ORDER BY d.disciplina
 
 /*
